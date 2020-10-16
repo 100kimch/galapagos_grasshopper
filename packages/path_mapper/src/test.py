@@ -1,3 +1,4 @@
+# NOTE: detecting bicycle roads only
 import cv2
 import numpy
 import pathlib
