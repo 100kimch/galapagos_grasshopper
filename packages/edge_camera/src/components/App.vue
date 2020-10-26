@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 <template>
     <Page>
         <ActionBar title="Welcome to NativeScript-Vue!" android:flat="true"/>
@@ -56,7 +57,6 @@ import { isAndroid, /*isIOS*/ } from "tns-core-modules/platform";
 
 import * as permissions from "nativescript-permissions";
 import * as utils from "tns-core-modules/utils/utils";
-
 // import * as platform from "tns-core-modules/platform/platform";
 
 interface ConfigCam {
@@ -75,9 +75,6 @@ interface ConfigCam {
     mFlashSupported: any,
     mFile: any,
 }
-
-declare const android: any;
-declare const java: any;
 
 
 @Component
@@ -104,29 +101,6 @@ export default class App extends Vue {
         mFile: null,
     });
     
-
-    // data() {
-    //     return {
-    //         retries: 0,
-    //         msg: 'Hello World!',
-    //         sensorUpdate: null,
-    //         // sensorManager: null,
-    //         // event: null,
-    //         // captures: [],
-    //         // imgReport: [],
-    //         // frontCam: false,
-    //         // webcam: null,
-    //         // img: null,
-    //         // camera: null,
-    //         // deviceId: null,
-    //         // devices: [],
-    //         // cam: null
-    //         //   googleKey: config.googleVisionKey
-    //         cam: {
-                
-    //         }
-    //     }
-    // },
     mounted() {
         // this.sensors.setListener(this.sensorListener);
         // this.getAccelerometer();
@@ -198,7 +172,6 @@ export default class App extends Vue {
         console.log("Camera Id List: ", cameraIdList);
         // console.log("Camera Id path: ", path);
 
-
         if (cameraIdList.length == 0) {
             console.error("no cameras detected.");
             return;
@@ -218,16 +191,16 @@ export default class App extends Vue {
 
         console.log("possibleCandidate: ", possibleCandidate);
 
-        // i
-        let MyStateCallback = android.hardware.camera2.CameraDevice.StateCallback.extend({
-            onOpened(cameraDevice) {
-                console.log("onOpened: " + cameraDevice);
-                // this.cam
+        // let MyStateCallback = android.hardware.camera2.CameraDevice.StateCallback.extend({
+        //     onOpened(cameraDevice) {
+        //         console.log("onOpened: " + cameraDevice);
+        //         // this.cam
                 
-            }
-        })
+        //     }
+        // })
 
-        console.log("MyStateCallback", MyStateCallback);
+        // this.cam.mStateCallBack = android.h
+        // console.log("MyStateCallback", MyStateCallback);
 
         // let stateCallback = new MyStateCallback();
 

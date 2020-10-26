@@ -26,11 +26,12 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "removeComments": false
   },
   "include": [
     "src",
-    "types"
+    "types",
   ],
   "exclude": [
     "node_modules",
