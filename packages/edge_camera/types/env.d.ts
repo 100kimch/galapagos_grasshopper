@@ -1,1 +1,1 @@
-declare var TNS_ENV: string;
+declare const TNS_ENV: string;
