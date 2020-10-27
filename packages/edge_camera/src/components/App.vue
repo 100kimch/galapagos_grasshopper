@@ -9,7 +9,7 @@
                 <FlexboxLayout alignItems="flex-start" backgroundColor="#3c495e">
                     <Label class="message" :text="msg" col="0" row="0"/>
                     <Button text="getPicture" @tap="getPicture" />
-                    <Button text="onCreatingView" @tap="onCreatingView" />
+                    <Button text="onTakeShot" @tap="onTakeShot" />
                 </FlexboxLayout>
             </TabViewItem>
             <TabViewItem title="Tab 2">
@@ -21,7 +21,8 @@
                 </FlexboxLayout>
             </TabViewItem>
             <TabViewItem title="Tab 3">
-                <FlexboxLayout columns="*" rows="*">
+                <FlexboxLayout columns="*" rows="*" backgroundColor="#3c495e">
+                    <Placeholder @creatingView="onCreatingView" id="placeholder-view" />
                     <!-- <Label class="message" :text="degree" /> -->
                     <!-- <Label class="message" :text="gyroScope" col="0" row="0"/> -->
                     <!-- <HtmlView html="<h1>Hello!</h1><input type='file' accept='image/*' capture='camera' />" /> -->
@@ -77,6 +78,35 @@ interface ConfigCam {
     mSurfaceTextureListener: android.view.TextureView.SurfaceTextureListener
 }
 
+// // from Java : public static abstract class
+// var newMyStateCallback = (android.hardware.camera2.CameraDevice.StateCallback as any).extend({
+//     onOpened: function (cameraDevice) {
+//         console.log("onOpened " + cameraDevice);
+
+//         // mCameraOpenCloseLock.release();
+//         // mCameraDevice = cameraDevice;
+//         // createCameraPreviewSession();
+//     },
+//     onDisconnected: function (cameraDevice) {
+//         console.log("onDisconnected");
+
+//         // mCameraOpenCloseLock.release();
+//         // cameraDevice.close();
+//         // mCameraDevice = null;
+//     },
+//     onError: function (cameraDevice, error) {
+//         console.log("onError");
+//         console.log("onError: device = " + cameraDevice);
+//         console.log("onError: error =  " + error);
+
+//         // mCameraOpenCloseLock.release();
+//         // cameraDevice.close();
+//         // mCameraDevice = null;
+//     },
+//     onClosed: function (cameraDevice) {
+//         console.log("onClosed");
+//     }
+// });
 
 @Component
 export default class App extends Vue {
@@ -128,7 +158,14 @@ export default class App extends Vue {
         })
     });
     private cam: ConfigCam = Object.assign({}, this._cam);
-
+    private state = Object.freeze({
+        'STATE_PREVIEW': 0,
+        'STATE_WAITING_LOCK': 1,
+        'STATE_WAITING_PRECAPTURE': 2,
+        'STATE_WAITING_NON_PRECAPTURE': 3,
+        'STATE_PICTURE_TAKEN': 4
+    });
+    private mState = this.state['STATE_PREVIEW'];
 
     private MyStateCallback = (android.hardware.camera2.CameraDevice.StateCallback as any).extend({
         onOpened: (cameraDevice) => {
@@ -138,7 +175,7 @@ export default class App extends Vue {
             this.createCameraPreviewSession();
         },
         onDisconnected: (cameraDevice) => {
-            console.log("onDisconnected()");
+            console.log("onDisconnected()", cameraDevice);
             this.cam.mCameraOpenCloseLock.release();
             cameraDevice.close();
             this.cam.mCameraDevice = null;
@@ -150,24 +187,107 @@ export default class App extends Vue {
             this.cam.mCameraDevice = null;
         },
         onClosed: (cameraDevice) => {
-            console.log("onClosed");
+            console.log("onClosed", cameraDevice);
         }
     });
 
+    // private MyStateCallback = class nStateCallback extends java.lang.Object {
+    //     // private cam = {
+    //     //     mCameraOpenCloseLock: new java.util.concurrent.Semaphore(1),
+    //     //     mCameraDevice: null,
+    //     // }
+    //     onOpened(cameraDevice) {
+    //         console.log("onOpened(): ", cameraDevice);
+    //         // this.cam.mCameraOpenCloseLock.release();
+    //         // this.cam.mCameraDevice = cameraDevice;
+    //         // this.createCameraPreviewSession();
+    //     }
+    //     onDisconnected(cameraDevice) {
+    //         console.log("onDisconnected()", cameraDevice);
+    //         // this.cam.mCameraOpenCloseLock.release();
+    //         // cameraDevice.close();
+    //         // this.cam.mCameraDevice = null;
+    //     }
+    //     onError(cameraDevice, error) {
+    //         console.log("onError(): device = ", cameraDevice, "error = ", error);
+    //         // this.cam.mCameraOpenCloseLock.release();
+    //         // cameraDevice.close();
+    //         // this.cam.mCameraDevice = null;
+    //     }
+    //     onClosed(cameraDevice) {
+    //         console.log("onClosed", cameraDevice);
+    //     }
+    // };
+
     private MyCameraCaptureSessionStateCallback = (android.hardware.camera2.CameraCaptureSession.StateCallback as any).extend({
-            onConfigured: (CameraCaptureSession) => {
-                console.log("onConfigured(): ", CameraCaptureSession);
+        onConfigured: (cameraCaptureSession) => {
+            console.log("onConfigured(): ", cameraCaptureSession);
 
-                if (this.cam.mCameraDevice === null) return;
+            if (this.cam.mCameraDevice === null) return;
 
-                this.cam.mCaptureSession = CameraCaptureSession;
-                this.cam.mPreviewRequest = this.cam.mPreviewRequestBuilder.build();
-                this.cam.mCaptureSession.setRepeatingRequest(this.cam.mPreviewRequest, new this.MyCameraCaptureSessionStateCallback(), null);
-            },
-            onConfigureFailed: (cameraCaptureSession) => {
-                console.log("onConfigureFailed(): ", cameraCaptureSession);
+            this.cam.mCaptureSession = cameraCaptureSession;
+            this.cam.mPreviewRequest = this.cam.mPreviewRequestBuilder.build();
+            this.cam.mCaptureSession.setRepeatingRequest(this.cam.mPreviewRequest, new this.MyCaptureSessionCaptureCallback(), null);
+        },
+        onConfigureFailed: (cameraCaptureSession) => {
+            console.log("onConfigureFailed(): ", cameraCaptureSession);
+        }
+    });
+
+    private MyCaptureSessionCaptureCallback = (android.hardware.camera2.CameraCaptureSession.CaptureCallback as any).extend({
+        process: (result) => {
+            switch(this.mState) {
+                case this.state['STATE_PREVIEW']: {
+                    break;
+                }
+                case this.state['STATE_WAITING_LOCK']: {
+                    const afState = result.get(android.hardware.camera2.CaptureResult.CONTROL_AF_STATE);
+                    if (afState === null) {
+                        this.captureStillPicture();
+                    } else if (android.hardware.camera2.CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED === afState ||
+                    android.hardware.camera2.CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED === afState) {
+                        const aeState = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_STATE);
+                        if (aeState === null || 
+                        aeState == android.hardware.camera2.CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                            this.mState = this.state['STATE_PICTURE_TAKEN'];
+                            this.captureStillPicture();
+                        } else {
+                            this.runPrecaptureSequence();
+                        }
+                    }
+                    break;
+                }
+                case this.state['STATE_WAITING_PRECAPTURE']: {
+                    const aeState = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_STATE);
+                    if (aeState === null ||
+                        aeState == android.hardware.camera2.CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
+                        aeState == android.hardware.camera2.CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
+                            this.mState = this.state['STATE_WAITING_NON_PRECAPTURE'];
+                    }
+                    break;
+                }
+                case this.state['STATE_WAITING_NON_PRECAPTURE']: {
+                    const aeState = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_STATE);
+                    if (aeState === null ||
+                        aeState != android.hardware.camera2.CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
+                        this.captureStillPicture();
+                    }
+                    break;
+                }
             }
-        });
+        },
+        onCaptureProgressed(session, request, partialResult) {
+            console.log("onCaptureProgressed()");
+            this.process(partialResult);
+        },
+        onCaptureCompleted(session, request, result) {
+            console.log("onCaptureCompleted");
+            this.process(result);
+        },
+        onCaptureFailed(session, request, failure) {
+            console.log("onCaptureFailed(): ", failure);
+        }
+    });
 
     
     mounted() {
@@ -176,12 +296,15 @@ export default class App extends Vue {
         setTimeout(() => {
             // console.log("camManager: ", app.android.context.getSystemService("camera"));
             // console.log("context: ", app.android.context);
-            this.onCreatingView();
+            // this.onCreatingView();
         }, 2000);
         app.android.registerBroadcastReceiver(
             android.content.Intent.ACTION_SCREEN_OFF,
             () => {console.log("time ticked.")}
         );
+
+        this.cam.mTextureView = new android.view.TextureView(app.android.context);
+        this.cam.mTextureView.setSurfaceTextureListener(this.cam.mSurfaceTextureListener);
         // console.log(app.android.context.CAMERA_SERVICE);
         // console.log(app.android.context.getSystemService(app.android.context.CAMERA_SERVICE));
     }
@@ -211,6 +334,7 @@ export default class App extends Vue {
             console.log("onCreatingView():");
             console.log("cameras: ", java.util.Arrays.toString(cameras));
             console.log("cameraManager: ", String(cameraManager));
+            console.log("permission: ", permissions.hasPermission(android.Manifest.permission.CAMERA));
 
             if (cameras.length == 0) {
                 console.error("no cameras detected.");
@@ -242,30 +366,32 @@ export default class App extends Vue {
             }
 
             console.log("final this.cam.mCameraId: ", this.cam.mCameraId);
+
+            console.log("executing...", Object.getOwnPropertyNames(cameraManager));
+
             this.cam.mStateCallBack = new this.MyStateCallback();
 
+            // let testing = new this.MyStateCallback();
+            // cameraManager.openCamera(String(cameras[0]), testing, null);
+            // console.log("executing done.")
 
-            console.log("executing...", cameras[0], this.cam.mBackgroundHandler);
 
-            cameraManager.openCamera(cameras[0], this.cam.mStateCallBack, this.cam.mBackgroundHandler)
-
-            console.log("executing done.")
 
             // NOTE: API 23 runtime permission check
             if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP || permissions.hasPermission(android.Manifest.permission.CAMERA))
-                cameraManager.openCamera(this.cam.mCameraId, this.cam.mStateCallBack, this.cam.mBackgroundHandler);
+                cameraManager.openCamera(String(this.cam.mCameraId), this.cam.mStateCallBack, this.cam.mBackgroundHandler);
             else
                 permissions.requestPermissions([
                     android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     android.Manifest.permission.CAMERA
                 ]).then(() => 
-                    cameraManager.openCamera(this.cam.mCameraId, this.cam.mStateCallBack, this.cam.mBackgroundHandler)
+                    cameraManager.openCamera(String(this.cam.mCameraId), this.cam.mStateCallBack, this.cam.mBackgroundHandler)
                 ).catch((err) =>
                     alert("Could not get camera permission. msg: " + err)
                 );
             
             this.cam.mTextureView = new android.view.TextureView(context);
-            // this.cam.mTextureView.setSurfaceTextureListener(mSurfac)
+            this.cam.mTextureView.setSurfaceTextureListener(this.cam.mSurfaceTextureListener);
 
             // cameraManager.openCamera(this.cam.mCameraId, new android.hardware.camera2.CameraDevice.StateCallback.class());
             // cameraManager.openCamera(this.cam.mCameraId, ()=> {});
@@ -274,9 +400,13 @@ export default class App extends Vue {
     }
 
     public createCameraPreviewSession() {
-        console.log("createCameraPreviewSession");
+        console.log("createCameraPreviewSession()");
 
-        if (!this.cam.mSurfaceTexture || !this.cam.mCameraDevice) return;
+        if (!this.cam.mSurfaceTexture || !this.cam.mCameraDevice) {
+            console.log("this.cam.mSurfaceTexture: ", this.cam.mSurfaceTexture);
+            console.log("this.cam.mCameraDevice: ", this.cam.mCameraDevice);
+            return;
+        }
 
         const texture = this.cam.mTextureView.getSurfaceTexture();
         texture.setDefaultBufferSize(800, 480);
@@ -288,6 +418,44 @@ export default class App extends Vue {
         const surfaceList = new java.util.ArrayList();
         surfaceList.add(surface);
         this.cam.mCameraDevice.createCaptureSession(surfaceList, new this.MyCameraCaptureSessionStateCallback(), null);
+
+        console.log("createCameraPreviewSession() done.");
+    }
+
+    public onTakeShot() {
+        if (app.android) {
+            console.log("onTakeShot");
+            this.lockFocus();
+        }
+    }
+
+    public lockFocus() {
+        console.log("lockFocus()");
+        this.mState = this.state['STATE_WAITING_LOCK'];
+        this.cam.mCaptureSession.capture(this.cam.mPreviewRequestBuilder.build(), this.cam.mCaptureCallback, this.cam.mBackgroundHandler);
+    }
+
+    public runPrecaptureSequence() {
+        this.cam.mPreviewRequestBuilder.set(android.hardware.camera2.CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, android.hardware.camera2.CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+        this.mState = this.state['STATE_WAITING_PRECAPTURE'];
+        this.cam.mCaptureSession.capture(this.cam.mPreviewRequestBuilder.build(), this.cam.mCaptureCallback, this.cam.mBackgroundHandler);
+    }
+
+    public captureStillPicture() {
+        const captureBuilder = this.cam.mCameraDevice.createCaptureRequest(android.hardware.camera2.CameraDevice.TEMPLATE_STILL_CAPTURE);
+        captureBuilder.addTarget(this.cam.mImageReader.getSurface());
+
+        // this.setAutoFlash(captureBuilder);
+
+        const CaptureCallback = (android.hardware.camera2.CameraCaptureSession.CaptureCallback as any).extend({
+            onCaptureCompleted: (session, request, result) => {
+                console.log("onCaptureCompleted");
+            }
+        });
+
+        this.cam.mCaptureSession.stopRepeating();
+        this.cam.mCaptureSession.abortCaptures();
+        this.cam.mCaptureSession.capture(captureBuilder.build(), new CaptureCallback(), null);
     }
 
     public receiverCallback(context, intent) {
@@ -380,12 +548,12 @@ export default class App extends Vue {
         // // app.android.foregroundActivity.startActivityForResult(takePictureIntent, 3453);
     }
 
-    public requestPermissions() {
-        return permissions.requestPermissions([
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.CAMERA
-        ]);
-    }
+    // public requestPermissions() {
+    //     return permissions.requestPermissions([
+    //         android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+    //         android.Manifest.permission.CAMERA
+    //     ]);
+    // }
 
     public cameraActivity() {
             
@@ -456,7 +624,7 @@ export default class App extends Vue {
                 }
             });
 
-            const orientationSensor = this.sensorManager.         getDefaultSensor(android.hardware.Sensor.TYPE_ROTATION_VECTOR);
+            const orientationSensor = this.sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ROTATION_VECTOR);
             // const orientationSensor = this.sensorManager.         getDefaultSensor(android.hardware.Sensor.TYPE_ORIENTATION);
             
             this.sensorManager.registerListener(
