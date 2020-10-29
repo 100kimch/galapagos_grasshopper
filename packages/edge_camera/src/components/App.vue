@@ -6,10 +6,11 @@
                  android:selectedTabTextColor="#ffffff"
                  androidSelectedTabHighlightColor="#ffffff">
             <TabViewItem title="Tab 1">
-                <FlexboxLayout alignItems="flex-start" backgroundColor="#3c495e">
+                <FlexboxLayout flexWrap="wrap" alignItems="flex-start" backgroundColor="#3c495e">
                     <Label class="message" :text="msg" col="0" row="0"/>
                     <Button text="getPicture" @tap="getPicture" />
                     <Button text="onTakeShot" @tap="onTakeShot" />
+                    <Placeholder @creatingView="onCreatingView" width="800" height="480" id="placeholder-view" />
                 </FlexboxLayout>
             </TabViewItem>
             <TabViewItem title="Tab 2">
@@ -22,7 +23,7 @@
             </TabViewItem>
             <TabViewItem title="Tab 3">
                 <FlexboxLayout columns="*" rows="*" backgroundColor="#3c495e">
-                    <Placeholder @creatingView="onCreatingView" id="placeholder-view" />
+                    <!-- <Placeholder @creatingView="onCreatingView" id="placeholder-view" /> -->
                     <!-- <Label class="message" :text="degree" /> -->
                     <!-- <Label class="message" :text="gyroScope" col="0" row="0"/> -->
                     <!-- <HtmlView html="<h1>Hello!</h1><input type='file' accept='image/*' capture='camera' />" /> -->
@@ -277,11 +278,11 @@ export default class App extends Vue {
             }
         },
         onCaptureProgressed(session, request, partialResult) {
-            console.log("onCaptureProgressed()");
+            // console.log("onCaptureProgressed()");
             this.process(partialResult);
         },
         onCaptureCompleted(session, request, result) {
-            console.log("onCaptureCompleted");
+            // console.log("onCaptureCompleted()");
             this.process(result);
         },
         onCaptureFailed(session, request, failure) {
@@ -303,8 +304,6 @@ export default class App extends Vue {
             () => {console.log("time ticked.")}
         );
 
-        this.cam.mTextureView = new android.view.TextureView(app.android.context);
-        this.cam.mTextureView.setSurfaceTextureListener(this.cam.mSurfaceTextureListener);
         // console.log(app.android.context.CAMERA_SERVICE);
         // console.log(app.android.context.getSystemService(app.android.context.CAMERA_SERVICE));
     }
@@ -313,7 +312,7 @@ export default class App extends Vue {
         return this.event;
     }
 
-    public onCreatingView() {
+    public onCreatingView(args) {
         if (app.android) {
             // if (!permissions.hasPermission(android.Manifest.permission.CAMERA)) {
             //     console.error("Application does not have permissions to camera");
@@ -392,6 +391,7 @@ export default class App extends Vue {
             
             this.cam.mTextureView = new android.view.TextureView(context);
             this.cam.mTextureView.setSurfaceTextureListener(this.cam.mSurfaceTextureListener);
+            args.view = this.cam.mTextureView;
 
             // cameraManager.openCamera(this.cam.mCameraId, new android.hardware.camera2.CameraDevice.StateCallback.class());
             // cameraManager.openCamera(this.cam.mCameraId, ()=> {});
@@ -450,6 +450,7 @@ export default class App extends Vue {
         const CaptureCallback = (android.hardware.camera2.CameraCaptureSession.CaptureCallback as any).extend({
             onCaptureCompleted: (session, request, result) => {
                 console.log("onCaptureCompleted");
+
             }
         });
 
