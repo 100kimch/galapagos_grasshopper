@@ -3,6 +3,45 @@
 import cv2
 import numpy as np
 import pathlib
+import urllib.request
+
+
+def get_map_image(point, level=2, type="2d"):
+    x, y, w, h = point
+    map_ret = []
+    for j in range(h, 0, -1):
+        map_x = []
+        for i in range(w):
+            url = 'https://map0.daumcdn.net/{}/2009alo/L{}/{}/{}.png'.format(
+                'map_' + type + '_hd', level, y + j, x + i)
+            print('url: ', url)
+            resp = urllib.request.urlopen(url)
+            image = np.asarray(bytearray(resp.read()), dtype="uint8")
+            map_x.append(cv2.imdecode(image, cv2.IMREAD_COLOR))
+        map_ret.append(np.concatenate(tuple(map_x), axis=1))
+    return np.concatenate(tuple(map_ret), axis=0)
+
+
+def url_to_image(url):
+    resp = urllib.request.urlopen(url)
+    image = np.asarray(bytearray(resp.read()), dtype="uint8")
+    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+    return image
+
+
+def url_to_image2(url1, url2):
+    resp = urllib.request.urlopen(url1)
+    image1 = np.asarray(bytearray(resp.read()), dtype="uint8")
+    image1 = cv2.imdecode(image1, cv2.IMREAD_COLOR)
+
+    resp = urllib.request.urlopen(url2)
+    image2 = np.asarray(bytearray(resp.read()), dtype="uint8")
+    image2 = cv2.imdecode(image2, cv2.IMREAD_COLOR)
+
+    ret = np.concatenate((image1, image2), axis=0)
+    # image = cv2.imdecode(ret, cv2.IMREAD_COLOR)
+    return ret
+
 
 path = pathlib.Path(__file__).parents[3].absolute()
 print(path)
@@ -10,34 +49,54 @@ size = 3
 kernel = np.ones((size, size), np.float32) / (size * size)
 
 
-kernel_dilate = np.ones((13, 13), np.float32) / (13 * 13)
+kernel_dilate = np.ones((15, 15), np.float32) / (15 * 15)
 
-img_general = cv2.imread(
-    str(path) + '/assets/images/sample_bicycle_19.png')
-img_road = cv2.imread(
-    str(path) + '/assets/images/sample_bicycle_21.png')
+# img_general = cv2.imread(
+#     str(path) + '/assets/images/sample_bicycle_19.png')
+# img_road = cv2.imread(
+#     str(path) + '/assets/images/sample_bicycle_21.png')
+
+# img_general = url_to_image(
+#     'https://map0.daumcdn.net/map_2d_hd/2009alo/L3/1972/820.png')
+# img_road = url_to_image(
+#     'https://map0.daumcdn.net/map_usedistrict_hd/2009alo/L3/1972/820.png')
+
+targets = {
+    'sinjungdong': (1642, 3940, 4, 4),
+    'simgok': (1643, 3944, 3, 3),
+    'chuni': (1649, 3941, 3, 3)
+}
+img_general = get_map_image(targets['sinjungdong'], type="2d")
+img_road = get_map_image(targets['sinjungdong'], type="usedistrict")
+
+# img_test = url_to_image2(
+#     'https://map0.daumcdn.net/map_2d_hd/2009alo/L3/1972/820.png',
+#     'https://map0.daumcdn.net/map_usedistrict_hd/2009alo/L3/1972/820.png')
+print('shape: ', img_general.shape)
+# exit
 img_road_hsv = cv2.cvtColor(img_road, cv2.COLOR_BGR2HSV)
 
-# NOTE: 1st - white, 2nd - subway lines or dark colors, 3rd - big roads, 4th - small yellow roads, 5th - small red roads
+# NOTE: 1st - white, 2nd - subway lines or dark colors, 3rd - wide orange roads, 4th - wide yellow roads, 5th - small yellow roads, 6th - small red roads
 colors_road_low = [(0, 0, 250), (0, 88, 0),
-                   (25, 60, 250), (27, 25, 230), (176, 0, 225)]
+                   (22, 138, 250), (27, 72, 230), (27, 25, 230), (176, 0, 225)]
 colors_road_high = [(180, 5, 255), (180, 255, 150),
-                    (34, 70, 255), (30, 48, 255), (180, 48, 255)]
+                    (28, 142, 255), (30, 74, 255), (30, 48, 255), (180, 48, 255)]
 
 mask_road = np.zeros(
     (img_general.shape[0], img_general.shape[1]), np.uint8)
 for l, h in zip(colors_road_low, colors_road_high):
     mask_road = mask_road | cv2.inRange(img_road_hsv, l, h)
-mask_road = cv2.medianBlur(mask_road, 5)
+# TODO: solve number label noise
+mask_road = cv2.medianBlur(mask_road, 13)
 # mask_road = cv2.dilate(mask_road, kernel)
 
 template = cv2.imread(
     str(path) + '/assets/images/sample_pattern_04.png', 0)
 w, h = template.shape[::-1]
 
-# WGY
-colors_low = [(20, 6, 227), (21, 131, 223), (25, 40, 220)]
-colors_high = [(25, 12, 233), (22, 134, 226), (28, 50, 240)]
+# NOTE: 123 - WGYO
+colors_low = [(15, 3, 227), (21, 131, 223), (25, 40, 220), (20, 140, 226)]
+colors_high = [(25, 12, 233), (22, 134, 226), (28, 50, 240), (23, 160, 234)]
 # colors_low = [(25, 38, 226), (22, 6, 225)]
 # colors_high = [(30, 50, 235), (25, 13, 235)]
 
@@ -53,7 +112,7 @@ while True:
     # ret, frame = cap.read()
     frame = img_general
 
-    filtered = cv2.filter2D(frame, -1, kernel)
+    # filtered = cv2.filter2D(frame, -1, kernel)
 
     if frame is None:
         break
@@ -66,7 +125,8 @@ while True:
     frame_cross = cv2.medianBlur(frame_cross, 3)
     frame_cross = frame_cross & mask_road
 
-    frame_hough = cv2.dilate(frame_cross, kernel_dilate)
+    frame_hough = cv2.erode(frame_cross, np.ones((3, 3), np.float32))
+    frame_hough = cv2.dilate(frame_hough, np.ones((20, 20), np.float32))
     # frame_hough = cv2.Canny(frame_hough, 50, 50, apertureSize=3)
     # frame_hough = cv2.dilate(frame_hough, kernel)
 
@@ -153,14 +213,17 @@ while True:
     # frame_corners[corners > 0.01 * corners.max()] = [0, 0, 255]
 
     cv2.imshow('testing', frame_cross)
-    cv2.imshow('testing2', frame_hough)
-    cv2.imshow('testing3', mask_road)
-    cv2.imshow('testing4', img_road)
+    cv2.imshow('testing2', mask_road)
+    cv2.imshow('testing3', frame)
+    # cv2.imshow('testing4', img_road)
+    cv2.imshow('testing4', frame_hough)
 
     key = cv2.waitKey(30)
     if key == ord('q') or key == 27:
         break
 
-# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_20.png', mask_road)
-# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_22.png', frame_cross)
-# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_24.png', frame_hough)
+cv2.imwrite(str(path) + '/assets/images/sample_bicycle_25.png', img_general)
+cv2.imwrite(str(path) + '/assets/images/sample_bicycle_26.png', img_road)
+cv2.imwrite(str(path) + '/assets/images/sample_bicycle_27.png', mask_road)
+cv2.imwrite(str(path) + '/assets/images/sample_bicycle_28.png', frame_cross)
+cv2.imwrite(str(path) + '/assets/images/sample_bicycle_29.png', frame_hough)
