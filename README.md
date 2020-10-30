@@ -6,6 +6,7 @@ This is a project for bicycles &amp; electric kickboard to run on "green wave".
 This `grasshopper` includes modules below:
 
 - ROS package for traffic sign recognition
+- Mobile application for traffic sign recognition
 - Bicycle path mapper
 - Traffic sign estimation system
 - Shortest path suggestion
@@ -16,6 +17,7 @@ This `grasshopper` includes modules below:
 본 `grasshopper`에는 다음 모듈이 포함되어 있습니다.
 
 - 보행 신호등 인식 ROS 패키지
+- 보행 신호등 인식 모바일 
 - 자전거 도로 매퍼
 - 신호등 예측 시스템
 - 최단경로 추천
