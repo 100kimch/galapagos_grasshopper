@@ -66,8 +66,8 @@ targets = {
     'simgok': (1643, 3944, 3, 3),
     'chuni': (1649, 3941, 3, 3)
 }
-img_general = get_map_image(targets['sinjungdong'], type="2d")
-img_road = get_map_image(targets['sinjungdong'], type="usedistrict")
+img_general = get_map_image(targets['chuni'], type="2d")
+img_road = get_map_image(targets['chuni'], type="usedistrict")
 
 # img_test = url_to_image2(
 #     'https://map0.daumcdn.net/map_2d_hd/2009alo/L3/1972/820.png',
@@ -139,10 +139,15 @@ while True:
 
     frame_hough = cv2.cvtColor(frame_hough, cv2.COLOR_GRAY2BGR)
 
+    font = cv2.FONT_HERSHEY_SIMPLEX
     for i, c in enumerate(contours):
         color = (255, 100, 100)
         cv2.drawContours(frame_hough, contours, i, color, 3)
         box = cv2.boxPoints(minRect[i])
+        # print("deg: {} coordinates: {}".format(minRect[i][2], minRect[i][0]))
+        cv2.putText(
+            frame_hough, 'deg: {:.2f}'.format(minRect[i][2]), (int(minRect[i][0][0]), int(minRect[i][0][1])), font, 1, (50, 50, 230), 2, cv2.LINE_AA)
+
         # np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
         box = np.intp(box)
         cv2.drawContours(frame_hough, [box], 0, (0, 0, 255), 3)
@@ -222,8 +227,8 @@ while True:
     if key == ord('q') or key == 27:
         break
 
-cv2.imwrite(str(path) + '/assets/images/sample_bicycle_25.png', img_general)
-cv2.imwrite(str(path) + '/assets/images/sample_bicycle_26.png', img_road)
-cv2.imwrite(str(path) + '/assets/images/sample_bicycle_27.png', mask_road)
-cv2.imwrite(str(path) + '/assets/images/sample_bicycle_28.png', frame_cross)
-cv2.imwrite(str(path) + '/assets/images/sample_bicycle_29.png', frame_hough)
+# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_25.png', img_general)
+# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_26.png', img_road)
+# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_27.png', mask_road)
+# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_28.png', frame_cross)
+# cv2.imwrite(str(path) + '/assets/images/sample_bicycle_29.png', frame_hough)
