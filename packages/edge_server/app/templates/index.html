@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charser="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=dege" />
+    {% if title %}
+    <title>{{ title }}</title>
+    {% endif %}
+  </head>
+
+  <body>
+    <h1>Bind testing: {{ testing }}</h1>
+    {% if has_image %}
+    <img src="{{ url_for('static', filename=image_file) }}" />
+    {% endif %}
+  </body>
+</html>
