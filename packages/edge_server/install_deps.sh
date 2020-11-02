@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# sudo apt install python3-pip
+# sudo ln -s /usr/share/pyshared/lsb_release.py /usr/local/lib/python3.8/site-packages/lsb_release.py
+
 cd $(cd "$(dirname "$0")" && pwd)
 
 rm -rf $(pwd)/venv && \
