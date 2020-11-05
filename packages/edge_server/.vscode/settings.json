@@ -1,0 +1,6 @@
+{
+    // "python.pythonPath": "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.8/bin/python3.8",
+    "python.venvPath": "${workspaceFolder}/.venv",
+    "python.formatting.provider": "black",
+    "python.pythonPath": "/Users/KJH/Documents/git/galapagos_grasshopper/packages/edge_server/.venv/bin/python3"
+}

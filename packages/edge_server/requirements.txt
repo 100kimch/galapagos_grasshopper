@@ -1,2 +1,9 @@
+wheel
 Flask
-opencv-python
+Flask-GraphQL
+graphene
+graphene-sqlalchemy
+SQLAlchemy
+pymysql
+pylint
+black
