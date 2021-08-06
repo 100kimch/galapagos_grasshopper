@@ -1,0 +1,93 @@
+body {
+    width: 720px;
+    margin: 0 auto;
+}
+
+.header{
+    display: inline-block;
+    width:720px;
+    margin-top: 20px;
+    padding-bottom: 20px;
+    background-color:rgb(255, 255, 194);
+}
+
+.header h2{
+    width: 720px;
+    text-align: center;
+}
+
+.header input[type="text"]{
+    display: inline-block;         /*display: inline-block은 왜 안되지*/
+    width: 50%;
+    height: 26px;
+    margin-left: 20%;
+    font-size: 18px;
+}
+
+#add-button{
+    display: inline-block;
+    width: 100px;
+    height: 35px;
+    text-align: center;
+    line-height: 35px;
+    background-color: green;
+    color:white;
+    border-radius: 5px;
+    font-weight:500;
+}
+
+#add-button:hover{
+    cursor: pointer;
+}
+
+.content{
+    display: inline-block;
+    width:720px;
+}
+
+#todo-list{
+    margin: 0;
+    padding: 0;     /*list tag leaves a blank space at left for list-style*/
+    width: inherit;
+    list-style: none;
+    background-color: rgb(204, 204, 204);
+    text-align: center;
+}
+
+#todo-list li:nth-child(odd){
+    background-color: rgb(238, 238, 238);
+}
+
+#todo-list li{
+    float: left;
+    width: inherit;
+    height: 35px;
+    line-height: 35px;
+    color: inherit;
+    background-color: inherit;
+}
+
+#todo-list li:hover{
+    cursor: pointer;
+    background-color: rgb(92, 92, 92);
+    color:white;
+}
+
+#todo-list li.checked{
+    background-color: black;
+    color: white;
+    text-decoration: line-through;
+}
+
+.close-button{
+    width:10%;
+    float:right;
+    color: inherit;
+    background-color: inherit;
+}
+
+.close-button:hover{
+    background-color: red;
+    cursor: pointer;
+    color:white;
+}
